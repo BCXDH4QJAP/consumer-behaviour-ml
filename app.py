@@ -57,6 +57,7 @@ st.markdown("---")
 st.subheader("🧹 Data Cleaning")
 
 df.columns = df.columns.str.strip()
+df.columns = df.columns.str.strip().str.replace(' ', '')
 st.write("Columns found:", df.columns.tolist())
 
 df.dropna(subset=['CustomerID'], inplace=True)
@@ -72,7 +73,8 @@ df['DayOfWeek']    = df['InvoiceDate'].dt.dayofweek
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Rows",      f"{df.shape[0]:,}")
 col2.metric("Total Customers", f"{df['CustomerID'].nunique():,}")
-col3.metric("Total Orders",    f"{df['InvoiceNo'].nunique():,}")
+# col3.metric("Total Orders",    f"{df['InvoiceNo'].nunique():,}")
+col3.metric("Total Orders", f"{df[df.columns[df.columns.str.contains('Invoice', case=False)][0]].nunique():,}")
 col4.metric("Total Revenue",   f"£{df['TotalPrice'].sum():,.0f}")
 
 # ─── EDA ───────────────────────────────────────────────────
