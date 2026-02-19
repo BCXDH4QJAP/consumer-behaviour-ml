@@ -57,9 +57,11 @@ st.markdown("---")
 st.subheader("🧹 Data Cleaning")
 
 df.columns = df.columns.str.strip()
+st.write("Columns found:", df.columns.tolist())
 
 df.dropna(subset=['CustomerID'], inplace=True)
-df = df[~df['InvoiceNo'].astype(str).str.startswith('C')]
+#df = df[~df['InvoiceNo'].astype(str).str.startswith('C')]
+df = df[~df['InvoiceNo'].astype(str).str.startswith('C')] if 'InvoiceNo' in df.columns else df
 df = df[df['Quantity'] > 0]
 df = df[df['UnitPrice'] > 0]
 df['TotalPrice']   = df['Quantity'] * df['UnitPrice']
@@ -239,3 +241,10 @@ with col2:
 # ─── Footer ────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("**Final Year Project | Consumer Behaviour Analysis using ML**")
+
+
+
+
+
+
+
