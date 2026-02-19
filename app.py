@@ -133,10 +133,16 @@ st.markdown("---")
 st.subheader("📐 RFM Analysis")
 
 snapshot_date = df['InvoiceDate'].max() + datetime.timedelta(days=1)
-rfm = df.groupby('CustomerID').agg({
-    'InvoiceDate' : lambda x: (snapshot_date - x.max()).days,
-    'InvoiceNo'   : 'nunique',
-    'TotalPrice'  : 'sum'
+# Auto detect column names
+cust_col    = [c for c in df.columns if 'customer' in c.lower()][0]
+invoice_col = [c for c in df.columns if 'invoice' in c.lower() and 'date' not in c.lower()][0]
+date_col    = [c for c in df.columns if 'date' in c.lower()][0]
+price_col   = [c for c in df.columns if 'total' in c.lower() or 'price' in c.lower()][0]
+
+rfm = df.groupby(cust_col).agg({
+    date_col    : lambda x: (snapshot_date - x.max()).days,
+    invoice_col : 'nunique',
+    price_col   : 'sum'
 }).reset_index()
 rfm.columns = ['CustomerID', 'Recency', 'Frequency', 'Monetary']
 rfm = rfm[rfm['Monetary'] > 0]
