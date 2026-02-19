@@ -58,22 +58,19 @@ st.subheader("🧹 Data Cleaning")
 
 df.columns = df.columns.str.strip()
 
-# detect customer column
-cust_col = 'Customer ID' if 'Customer ID' in df.columns else 'CustomerID'
-
-df.dropna(subset=[cust_col], inplace=True)
-df = df[~df['Invoice'].astype(str).str.startswith('C')]
+df.dropna(subset=['CustomerID'], inplace=True)
+df = df[~df['InvoiceNo'].astype(str).str.startswith('C')]
 df = df[df['Quantity'] > 0]
-df = df[df['Price'] > 0]
-df['TotalPrice']   = df['Quantity'] * df['Price']
+df = df[df['UnitPrice'] > 0]
+df['TotalPrice']   = df['Quantity'] * df['UnitPrice']
 df['InvoiceDate']  = pd.to_datetime(df['InvoiceDate'])
 df['Month']        = df['InvoiceDate'].dt.month
 df['DayOfWeek']    = df['InvoiceDate'].dt.dayofweek
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Rows",      f"{df.shape[0]:,}")
-col2.metric("Total Customers", f"{df[cust_col].nunique():,}")
-col3.metric("Total Orders",    f"{df['Invoice'].nunique():,}")
+col2.metric("Total Customers", f"{df['CustomerID'].nunique():,}")
+col3.metric("Total Orders",    f"{df['InvoiceNo'].nunique():,}")
 col4.metric("Total Revenue",   f"£{df['TotalPrice'].sum():,.0f}")
 
 # ─── EDA ───────────────────────────────────────────────────
@@ -130,9 +127,9 @@ st.markdown("---")
 st.subheader("📐 RFM Analysis")
 
 snapshot_date = df['InvoiceDate'].max() + datetime.timedelta(days=1)
-rfm = df.groupby(cust_col).agg({
+rfm = df.groupby('CustomerID').agg({
     'InvoiceDate' : lambda x: (snapshot_date - x.max()).days,
-    'Invoice'     : 'nunique',
+    'InvoiceNo'   : 'nunique',
     'TotalPrice'  : 'sum'
 }).reset_index()
 rfm.columns = ['CustomerID', 'Recency', 'Frequency', 'Monetary']
@@ -162,7 +159,7 @@ with col3:
 st.markdown("---")
 st.subheader("🔵 Customer Segmentation (KMeans)")
 
-scaler    = StandardScaler()
+scaler     = StandardScaler()
 rfm_scaled = scaler.fit_transform(rfm[['Recency','Frequency','Monetary']])
 
 # Elbow
