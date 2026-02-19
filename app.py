@@ -92,8 +92,10 @@ with col1:
 
 with col2:
     st.markdown("**Sales by Day of Week**")
-    daily = df.groupby('DayOfWeek')['TotalPrice'].sum()
-    daily.index = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+    day_names = {0:'Mon',1:'Tue',2:'Wed',3:'Thu',4:'Fri',5:'Sat',6:'Sun'}
+    daily = df.groupby('DayOfWeek')['TotalPrice'].sum().reset_index()
+    daily['DayName'] = daily['DayOfWeek'].map(day_names)
+    daily = daily.set_index('DayName')['TotalPrice']
     fig, ax = plt.subplots(figsize=(6,3))
     daily.plot(kind='bar', ax=ax, color='coral')
     ax.set_title("Revenue by Day of Week")
