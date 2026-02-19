@@ -63,7 +63,7 @@ df = df[~df['InvoiceNo'].astype(str).str.startswith('C')]
 df = df[df['Quantity'] > 0]
 df = df[df['UnitPrice'] > 0]
 df['TotalPrice']   = df['Quantity'] * df['UnitPrice']
-df['InvoiceDate']  = pd.to_datetime(df['InvoiceDate'])
+df['InvoiceDate']  = pd.to_datetime(df['InvoiceDate'], dayfirst=True, errors='coerce')
 df['Month']        = df['InvoiceDate'].dt.month
 df['DayOfWeek']    = df['InvoiceDate'].dt.dayofweek
 
