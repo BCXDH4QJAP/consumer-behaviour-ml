@@ -213,46 +213,90 @@ with col2:
 st.markdown("**Cluster Summary:**")
 st.dataframe(rfm.groupby('Segment')[['Recency','Frequency','Monetary']].mean().round(2))
 
-# ─── Classification ────────────────────────────────────────
+# ---- Classification ----
 st.markdown("---")
-st.subheader("🤖 Purchase Prediction (Random Forest)")
+st.subheader("🤖 Customer Churn Prediction (Random Forest)")
 
-rfm['Label'] = (rfm['Frequency'] > rfm['Frequency'].median()).astype(int)
-X = rfm[['Recency','Frequency','Monetary']]
-y = rfm['Label']
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score, ConfusionMatrixDisplay
+
+
+
+# ✅ Better churn definition (dynamic threshold instead of fixed 30)
+threshold = rfm['Recency'].quantile(0.75)  # top 25% = churn
+rfm['churn'] = (rfm['Recency'] > threshold).astype(int)
+
+# ✅ Check class balance
+st.write("Class Distribution:", rfm['churn'].value_counts())
+
+# ❌ Avoid leakage (Recency removed)
+X = rfm[['Frequency', 'Monetary']]
+y = rfm['churn']
+
+# ✅ Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y)
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
+# ✅ Model
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
 rf.fit(X_train, y_train)
+
+import numpy as np
+
 y_pred = rf.predict(X_test)
 
-report = classification_report(y_test, y_pred, output_dict=True)
-report_df = pd.DataFrame(report).transpose().round(2)
+# ✅ Safe probability extraction
+if hasattr(rf, "predict_proba") and len(rf.classes_) > 1:
+    class_index = list(rf.classes_).index(1) if 1 in rf.classes_ else 0
+    y_prob = rf.predict_proba(X_test)[:, class_index]
+    
+    if len(np.unique(y_test)) > 1:
+        auc = roc_auc_score(y_test, y_prob)
+    else:
+        auc = "AUC not defined (only one class in y_test)"
+else:
+    y_prob = None
+    auc = "Only one class predicted by model"
 
+print("AUC:", auc)
+
+
+
+# ---- Layout ----
 col1, col2 = st.columns(2)
 
+# 📊 REPORT
 with col1:
-    st.markdown("**Classification Report:**")
+    st.markdown("**📊 Classification Report:**")
+    report = classification_report(y_test, y_pred, output_dict=True)
+    report_df = pd.DataFrame(report).transpose().round(2)
     st.dataframe(report_df)
 
+    st.write(f"**AUC Score:** {auc}")
+
+# 📈 FEATURE IMPORTANCE
 with col2:
-    st.markdown("**Feature Importance:**")
+    st.markdown("**📈 Feature Importance:**")
     feat_imp = pd.Series(rf.feature_importances_, index=X.columns)
+
     fig, ax = plt.subplots(figsize=(5,3))
-    feat_imp.sort_values().plot(kind='barh', ax=ax, color='teal')
+    feat_imp.sort_values().plot(kind='barh', ax=ax)
     ax.set_title("Feature Importance")
     plt.tight_layout()
     st.pyplot(fig)
 
-# ─── Footer ────────────────────────────────────────────────
+# 🔍 CONFUSION MATRIX
+st.markdown("**🔍 Confusion Matrix:**")
+fig_cm, ax_cm = plt.subplots()
+ConfusionMatrixDisplay.from_estimator(rf, X_test, y_test, ax=ax_cm)
+st.pyplot(fig_cm)
+
+# ---- Footer ----
 st.markdown("---")
-st.markdown("**Final Year Project | Consumer Behaviour Analysis using ML**")
-
-
-
-
-
-
-
+st.markdown("**Final Year Project | Customer Behaviour Analysis using ML**")
